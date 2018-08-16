@@ -1,38 +1,46 @@
+# frozen_string_literal: true
+
 module Jekyll
   module Hooks
     DEFAULT_PRIORITY = 20
 
     # compatibility layer for octopress-hooks users
     PRIORITY_MAP = {
-      low: 10,
-      normal: 20,
-      high: 30,
+      :low    => 10,
+      :normal => 20,
+      :high   => 30,
     }.freeze
 
     # initial empty hooks
     @registry = {
-      :site => {
-        after_reset: [],
-        post_read: [],
-        pre_render: [],
-        post_write: [],
+      :site      => {
+        :after_init  => [],
+        :after_reset => [],
+        :post_read   => [],
+        :pre_render  => [],
+        :post_render => [],
+        :post_write  => [],
       },
-      :page => {
-        post_init: [],
-        pre_render: [],
-        post_render: [],
-        post_write: [],
+      :pages     => {
+        :post_init   => [],
+        :pre_render  => [],
+        :post_render => [],
+        :post_write  => [],
       },
-      :post => {
-        post_init: [],
-        pre_render: [],
-        post_render: [],
-        post_write: [],
+      :posts     => {
+        :post_init   => [],
+        :pre_render  => [],
+        :post_render => [],
+        :post_write  => [],
       },
-      :document => {
-        pre_render: [],
-        post_render: [],
-        post_write: [],
+      :documents => {
+        :post_init   => [],
+        :pre_render  => [],
+        :post_render => [],
+        :post_write  => [],
+      },
+      :clean     => {
+        :on_obsolete => [],
       },
     }
 
@@ -51,31 +59,31 @@ module Jekyll
 
     # Ensure the priority is a Fixnum
     def self.priority_value(priority)
-      return priority if priority.is_a?(Fixnum)
+      return priority if priority.is_a?(Integer)
       PRIORITY_MAP[priority] || DEFAULT_PRIORITY
     end
 
     # register a single hook to be called later, internal API
     def self.register_one(owner, event, priority, &block)
-      unless @registry[owner]
-        raise NotAvailable, "Hooks are only available for the following " <<
-          "classes: #{@registry.keys.inspect}"
-      end
+      @registry[owner] ||= {
+        :post_init   => [],
+        :pre_render  => [],
+        :post_render => [],
+        :post_write  => [],
+      }
 
       unless @registry[owner][event]
-        raise NotAvailable, "Invalid hook. #{owner} supports only the " <<
+        raise NotAvailable, "Invalid hook. #{owner} supports only the " \
           "following hooks #{@registry[owner].keys.inspect}"
       end
 
-      unless block.respond_to? :call
-        raise Uncallable, "Hooks must respond to :call"
-      end
+      raise Uncallable, "Hooks must respond to :call" unless block.respond_to? :call
 
       insert_hook owner, event, priority, &block
     end
 
     def self.insert_hook(owner, event, priority, &block)
-      @hook_priority[block] = "#{priority}.#{@hook_priority.size}".to_f
+      @hook_priority[block] = [-priority, @hook_priority.size]
       @registry[owner][event] << block
     end
 

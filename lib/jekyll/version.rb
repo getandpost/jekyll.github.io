@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Jekyll
-  VERSION = '3.0.0.pre.beta8'
+  VERSION = "3.8.3"
 end
